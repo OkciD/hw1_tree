@@ -13,6 +13,19 @@ const (
 	end       string = "└───"
 )
 
+// Из слайса файлов оставляет только директории
+func filterFiles(files []os.FileInfo) (result []os.FileInfo) {
+	for _, file := range files {
+		if !file.IsDir() {
+			continue
+		}
+
+		result = append(result, file)
+	}
+
+	return
+}
+
 func dirTree(out io.Writer, path string, printFiles bool) error {
 	var rootDir, _ = os.Open(path)
 	defer rootDir.Close()
@@ -27,8 +40,14 @@ func dirTree(out io.Writer, path string, printFiles bool) error {
 		return rootDirContents[i].Name() < rootDirContents[j].Name()
 	})
 
+	if !printFiles {
+		rootDirContents = filterFiles(rootDirContents)
+	}
+
 	for idx, file := range rootDirContents {
-		if idx != len(rootDirContents)-1 {
+		var isLastFile = idx == len(rootDirContents)-1
+
+		if !isLastFile {
 			fmt.Fprintln(out, tJunction+file.Name())
 		} else {
 			fmt.Fprintln(out, end+file.Name())
