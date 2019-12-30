@@ -13,15 +13,31 @@ const (
 	end       string = "└───"
 )
 
-// Из слайса файлов оставляет только директории
-func filterFiles(files []os.FileInfo) (result []os.FileInfo) {
-	for _, file := range files {
-		if !file.IsDir() {
-			continue
-		}
+// возвращает остортированное содержимое папки и, если нужно, исключаем из него файлы
+func getSortedDirContents(dir *os.File, shouldFilterFiles bool) (result []os.FileInfo, err error) {
+	dirContents, err := dir.Readdir(0)
 
-		result = append(result, file)
+	if err != nil {
+		return nil, err
 	}
+
+	// если нужно, убираем из слайса файлы
+	if shouldFilterFiles {
+		for _, file := range dirContents {
+			if !file.IsDir() {
+				continue
+			}
+
+			result = append(result, file)
+		}
+	} else {
+		result = dirContents
+	}
+
+	// сортируем
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Name() < result[j].Name()
+	})
 
 	return
 }
@@ -30,18 +46,10 @@ func dirTree(out io.Writer, path string, printFiles bool) error {
 	var rootDir, _ = os.Open(path)
 	defer rootDir.Close()
 
-	rootDirContents, err := rootDir.Readdir(0)
+	rootDirContents, err := getSortedDirContents(rootDir, !printFiles)
 
 	if err != nil {
 		return err
-	}
-
-	sort.Slice(rootDirContents, func(i, j int) bool {
-		return rootDirContents[i].Name() < rootDirContents[j].Name()
-	})
-
-	if !printFiles {
-		rootDirContents = filterFiles(rootDirContents)
 	}
 
 	for idx, file := range rootDirContents {
