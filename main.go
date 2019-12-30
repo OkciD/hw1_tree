@@ -29,9 +29,9 @@ func dirTree(out io.Writer, path string, printFiles bool) error {
 
 	for idx, file := range rootDirContents {
 		if idx != len(rootDirContents)-1 {
-			fmt.Println(tJunction + file.Name())
+			fmt.Fprintln(out, tJunction+file.Name())
 		} else {
-			fmt.Println(end + file.Name())
+			fmt.Fprintln(out, end+file.Name())
 		}
 	}
 
