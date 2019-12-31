@@ -56,14 +56,42 @@ func getDirContents(path string, shouldFilterFiles bool) (result []ExtendedFileI
 
 func dirTree(out io.Writer, path string, printFiles bool) error {
 	rootDirContents := getDirContents(path, !printFiles)
+	var branch = [][]ExtendedFileInfo{rootDirContents}
+	var depth = 0
 
-	for _, file := range rootDirContents {
-		if !file.isLast {
-			fmt.Fprintln(out, tJunction+file.Name())
+	for len(branch[0]) > 0 {
+		if len(branch[depth]) == 0 {
+			branch = branch[:len(branch)-1]
+			depth--
+			branch[depth] = branch[depth][1:]
+			continue
+		}
+
+		currentFile := branch[depth][0]
+
+		if currentFile.IsDir() || printFiles {
+			if !currentFile.isLast {
+				fmt.Fprintln(out, tJunction+currentFile.Name())
+			} else {
+				fmt.Fprintln(out, end+currentFile.Name())
+			}
+		}
+
+		if currentFile.IsDir() {
+			branch = append(branch, getDirContents(currentFile.path, !printFiles))
+			depth++
 		} else {
-			fmt.Fprintln(out, end+file.Name())
+			branch[depth] = branch[depth][1:]
 		}
 	}
+
+	//for _, file := range rootDirContents {
+	//	if !file.isLast {
+	//		fmt.Fprintln(out, tJunction+file.Name())
+	//	} else {
+	//		fmt.Fprintln(out, end+file.Name())
+	//	}
+	//}
 
 	return nil
 }
