@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"sort"
 )
 
@@ -13,49 +14,51 @@ const (
 	end       string = "└───"
 )
 
-// возвращает остортированное содержимое папки и, если нужно, исключаем из него файлы
-func getSortedDirContents(dir *os.File, shouldFilterFiles bool) (result []os.FileInfo, err error) {
-	dirContents, err := dir.Readdir(0)
+type ExtendedFileInfo struct {
+	os.FileInfo
+	path   string
+	isLast bool
+}
 
-	if err != nil {
-		return nil, err
-	}
+// возвращает остортированное содержимое папки и, если нужно, исключает из него файлы
+func getDirContents(path string, shouldFilterFiles bool) (result []ExtendedFileInfo) {
+	dir, _ := os.Open(path)
+	defer dir.Close()
 
-	// если нужно, убираем из слайса файлы
-	if shouldFilterFiles {
-		for _, file := range dirContents {
-			if !file.IsDir() {
-				continue
-			}
-
-			result = append(result, file)
-		}
-	} else {
-		result = dirContents
-	}
+	dirContents, _ := dir.Readdir(0)
 
 	// сортируем
-	sort.Slice(result, func(i, j int) bool {
-		return result[i].Name() < result[j].Name()
+	sort.Slice(dirContents, func(i, j int) bool {
+		return dirContents[i].Name() < dirContents[j].Name()
 	})
+
+	for idx, fileInfo := range dirContents {
+		// если нужно, убираем из результирующего слайса файлы
+		if shouldFilterFiles && !fileInfo.IsDir() {
+			dirContents = append(dirContents[:idx], dirContents[idx+1:]...)
+			continue
+		}
+
+		extendedFileInfo := ExtendedFileInfo{
+			FileInfo: fileInfo,
+			path:     filepath.Join(path, fileInfo.Name()),
+		}
+
+		result = append(result, extendedFileInfo)
+	}
+
+	if result != nil {
+		result[len(result)-1].isLast = true
+	}
 
 	return
 }
 
 func dirTree(out io.Writer, path string, printFiles bool) error {
-	var rootDir, _ = os.Open(path)
-	defer rootDir.Close()
+	rootDirContents := getDirContents(path, !printFiles)
 
-	rootDirContents, err := getSortedDirContents(rootDir, !printFiles)
-
-	if err != nil {
-		return err
-	}
-
-	for idx, file := range rootDirContents {
-		var isLastFile = idx == len(rootDirContents)-1
-
-		if !isLastFile {
+	for _, file := range rootDirContents {
+		if !file.isLast {
 			fmt.Fprintln(out, tJunction+file.Name())
 		} else {
 			fmt.Fprintln(out, end+file.Name())
