@@ -32,10 +32,9 @@ func getDirContents(path string, shouldFilterFiles bool) (result []ExtendedFileI
 		return dirContents[i].Name() < dirContents[j].Name()
 	})
 
-	for idx, fileInfo := range dirContents {
-		// если нужно, убираем из результирующего слайса файлы
+	for _, fileInfo := range dirContents {
+		// если нужно, не даём файлам попасть в результирующий слайс
 		if shouldFilterFiles && !fileInfo.IsDir() {
-			dirContents = append(dirContents[:idx], dirContents[idx+1:]...)
 			continue
 		}
 
