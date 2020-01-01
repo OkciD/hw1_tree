@@ -68,12 +68,25 @@ func dirTree(out io.Writer, path string, printFiles bool) error {
 
 		currentFile := branch[depth][0]
 
+		// печатаем директорию или файл
 		if currentFile.IsDir() || printFiles {
-			if !currentFile.isLast {
-				fmt.Fprintln(out, tJunction+currentFile.Name())
-			} else {
-				fmt.Fprintln(out, end+currentFile.Name())
+			var prefix string
+
+			for i := 0; i < depth; i++ {
+				if branch[i][0].isLast {
+					prefix += "\t"
+				} else {
+					prefix += pipe
+				}
 			}
+
+			if !currentFile.isLast {
+				prefix += tJunction
+			} else {
+				prefix += end
+			}
+
+			fmt.Fprintln(out, prefix+currentFile.Name())
 		}
 
 		if currentFile.IsDir() {
@@ -83,14 +96,6 @@ func dirTree(out io.Writer, path string, printFiles bool) error {
 			branch[depth] = branch[depth][1:]
 		}
 	}
-
-	//for _, file := range rootDirContents {
-	//	if !file.isLast {
-	//		fmt.Fprintln(out, tJunction+file.Name())
-	//	} else {
-	//		fmt.Fprintln(out, end+file.Name())
-	//	}
-	//}
 
 	return nil
 }
