@@ -71,8 +71,8 @@ func dirTree(out io.Writer, path string, printFiles bool) error {
 
 		// печатаем директорию или файл
 		if currentFile.IsDir() || printFiles {
+			// высчитываем префикс типа "│	│		└───"
 			var prefix string
-
 			for i := 0; i < depth; i++ {
 				if branch[i][0].isLast {
 					prefix += "\t"
@@ -80,25 +80,26 @@ func dirTree(out io.Writer, path string, printFiles bool) error {
 					prefix += pipe
 				}
 			}
-
+			// финальная часть префикса - ├─── или └───
 			if !currentFile.isLast {
 				prefix += tJunction
 			} else {
 				prefix += end
 			}
 
-			var sizeString string
+			// собираем строку с размером файла
+			var sizePostfix string
 			if !currentFile.IsDir() && printFiles {
 				size := currentFile.Size()
 
 				if size == 0 {
-					sizeString = " (empty)"
+					sizePostfix = " (empty)"
 				} else {
-					sizeString = " (" + strconv.FormatInt(size, 10) + "b)"
+					sizePostfix = " (" + strconv.FormatInt(size, 10) + "b)"
 				}
 			}
 
-			fmt.Fprintln(out, prefix+currentFile.Name()+sizeString)
+			fmt.Fprintln(out, prefix+currentFile.Name()+sizePostfix)
 		}
 
 		if currentFile.IsDir() {
