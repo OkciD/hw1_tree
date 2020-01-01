@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 )
 
 const (
@@ -86,7 +87,18 @@ func dirTree(out io.Writer, path string, printFiles bool) error {
 				prefix += end
 			}
 
-			fmt.Fprintln(out, prefix+currentFile.Name())
+			var sizeString string
+			if !currentFile.IsDir() && printFiles {
+				size := currentFile.Size()
+
+				if size == 0 {
+					sizeString = " (empty)"
+				} else {
+					sizeString = " (" + strconv.FormatInt(size, 10) + "b)"
+				}
+			}
+
+			fmt.Fprintln(out, prefix+currentFile.Name()+sizeString)
 		}
 
 		if currentFile.IsDir() {
